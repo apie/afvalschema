@@ -25,8 +25,9 @@ WEEKDAYS = {
 }
 
 def parse_rule(waste_type, d):
-    rule, start_date = d.split(' vanaf ')
+    rule, start_date, end_date = re.findall(r'^(.+) van (.+) tot (.+)$', d)[0]
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     freq, weekday = rule.split(' op ')
 
     freq = byday = interval = None
@@ -42,7 +43,7 @@ def parse_rule(waste_type, d):
 
     assert all(x for x in (freq, byday, interval)), f"Parsing of rule for {waste_type} failed"
     assert calendar.day_abbr[start_date.weekday()][0:2].upper() == byday, "Start date not same weekday as rule"
-    return start_date, waste_type, {'FREQ': [freq], 'BYDAY': byday, 'INTERVAL': interval, 'COUNT': 12}
+    return start_date, waste_type, {'FREQ': [freq], 'BYDAY': byday, 'INTERVAL': interval, 'UNTIL': end_date}
 
 def lees_schema(schema):
     return [
