@@ -25,12 +25,14 @@ WEEKDAYS = {
 }
 
 def parse_rule(waste_type, d):
-    rule, start_date, end_date = re.findall(r'^(.+) van (.+) tot (.+)$', d)[0]
+    rule, start_date, end_date, exception_str = re.findall(r'^(.+) van (.+) tot (.+?)( behalve .+)?$', d)[0]
     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     freq, weekday = rule.split(' op ')
 
     freq = byday = interval = None
+    rdate = set()
+    exdate = set()
     if 'week' in rule or 'weken' in rule:
         freq = 'WEEKLY'
         if 'om de week' in rule:
@@ -41,9 +43,18 @@ def parse_rule(waste_type, d):
     if m := re.findall(r' op (\w+dag)$', rule):
         byday = WEEKDAYS[m[0]]
 
-    assert all(x for x in (freq, byday, interval)), f"Parsing of rule for {waste_type} failed"
+    if exception_str:
+        ex_date_str, replace_date_str = re.findall(r'^ behalve (.+), dat wordt (.+)$', exception_str)[0]
+        ex_date = datetime.strptime(ex_date_str, '%Y-%m-%d').date()
+        replace_date = datetime.strptime(replace_date_str, '%Y-%m-%d').date()
+        assert calendar.day_abbr[ex_date.weekday()][0:2].upper() == byday, "Ex date not same weekday as rule"
+        exdate.add(ex_date)
+        rdate.add(replace_date)
+
+    assert all((freq, byday, interval)), f"Parsing of rule for {waste_type} failed"
     assert calendar.day_abbr[start_date.weekday()][0:2].upper() == byday, "Start date not same weekday as rule"
-    return start_date, waste_type, {'FREQ': [freq], 'BYDAY': byday, 'INTERVAL': interval, 'UNTIL': end_date}
+    rrule = {'FREQ': [freq], 'BYDAY': byday, 'INTERVAL': interval, 'UNTIL': end_date}
+    return start_date, waste_type, rrule, rdate, exdate
 
 def lees_schema(schema):
     return [
@@ -57,12 +68,16 @@ def schrijf_ical(afvalkal):
     cal.add("version", "2.0")
 
     now = datetime.now(pytz.timezone(timezone))
-    for date, waste_type, rrule in sorted(afvalkal):
+    for date, waste_type, rrule, rdate, exdate in sorted(afvalkal):
         event = Event()
         event.add("summary", f"Afvalkalender {waste_type.capitalize()}")
         event.add('uid', str(now)+waste_type)
         event.add("dtstart", date)
         event.add("rrule", rrule)
+        if rdate:
+            event.add("rdate", rdate)
+        if exdate:
+            event.add("exdate", exdate)
         event.add("dtstamp", now)
         cal.add_component(event)
 

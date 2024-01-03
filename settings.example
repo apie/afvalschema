@@ -2,5 +2,5 @@ schema = {
     'pmd':    'om de week op woensdag van 2024-01-03 tot 2024-12-31',
     'gft':    'iedere 4 weken op dinsdag van 2024-01-09 tot 2024-12-31',
     'rest':   'iedere 4 weken op donderdag van 2024-01-18 tot 2024-12-31',
-    'papier': 'iedere 4 weken op woensdag van 2024-01-24 tot 2024-12-31',
+    'papier': 'iedere 4 weken op woensdag van 2024-01-24 tot 2024-12-31 behalve 2024-12-25, dat wordt 2024-12-24',
 }
