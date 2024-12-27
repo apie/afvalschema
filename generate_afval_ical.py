@@ -47,12 +47,12 @@ def parse_rule(waste_type, d):
         ex_date_str, replace_date_str = re.findall(r'^ behalve (.+), dat wordt (.+)$', exception_str)[0]
         ex_date = datetime.strptime(ex_date_str, '%Y-%m-%d').date()
         replace_date = datetime.strptime(replace_date_str, '%Y-%m-%d').date()
-        assert calendar.day_abbr[ex_date.weekday()][0:2].upper() == byday, "Ex date not same weekday as rule"
+        assert calendar.day_abbr[ex_date.weekday()][0:2].upper() == byday, f"Ex date not same weekday as rule. {waste_type=} {ex_date=}"
         exdate.add(ex_date)
         rdate.add(replace_date)
 
     assert all((freq, byday, interval)), f"Parsing of rule for {waste_type} failed"
-    assert calendar.day_abbr[start_date.weekday()][0:2].upper() == byday, "Start date not same weekday as rule"
+    assert calendar.day_abbr[start_date.weekday()][0:2].upper() == byday, f"Start date not same weekday as rule. {waste_type=} {start_date=}"
     rrule = {'FREQ': [freq], 'BYDAY': byday, 'INTERVAL': interval, 'UNTIL': end_date}
     return start_date, waste_type, rrule, rdate, exdate
 
